@@ -5,6 +5,7 @@ import ProfileImage from "./ProfileImage";
 import { useSession } from "next-auth/react";
 import { VscHeart, VscHeartFilled } from "react-icons/vsc";
 import IconHoverEffect from "./IconHoverEffect";
+import { api } from "~/utils/api";
 type Tweet = {
   id: string;
   content: String;
@@ -16,7 +17,7 @@ type Tweet = {
 type InfiniteTweetListProps = {
   isLoading: boolean;
   isError: boolean;
-  hasMore: boolean;
+  hasMore: boolean | undefined;
   fetchNewTweets: () => Promise<unknown>;
   tweets?: Tweet[];
 };
@@ -26,7 +27,7 @@ const InfiniteTweetList = ({
   isError,
   isLoading,
   fetchNewTweets,
-  hasMore,
+  hasMore = false,
 }: InfiniteTweetListProps) => {
   console.log("tweets", tweets);
   if (isLoading) return <h1>Loading...</h1>;
@@ -63,6 +64,42 @@ function TweetCard({
   likeCount,
   likedByMe,
 }: Tweet) {
+  const trpcUtils = api.useContext();
+  const toggleLike = api.tweet.toggleLike.useMutation({
+    onSuccess: async ({ addedLike }) => {
+      const updateData: Parameters<
+        typeof trpcUtils.tweet.infiniteFeed.setInfiniteData
+      >[1] = (oldData) => {
+        if (oldData == null) return;
+
+        const countModifier = addedLike ? 1 : -1;
+        return {
+          ...oldData,
+          pages: oldData.pages.map((page) => {
+            return {
+              ...page,
+              tweets: page.tweets.map((tweet) => {
+                if (tweet.id === id) {
+                  return {
+                    ...tweet,
+                    likeCount: tweet.likeCount + countModifier,
+                    likedByMe: addedLike,
+                  };
+                }
+                return tweet;
+              }),
+            };
+          }),
+        };
+      };
+      trpcUtils.tweet.infiniteFeed.setInfiniteData({}, updateData);
+    },
+  });
+
+  const handleToggleLike = () => {
+    toggleLike.mutate({ id });
+  };
+
   const dateTimeFormatter = new Intl.DateTimeFormat(undefined, {
     dateStyle: "short",
   });
@@ -86,18 +123,30 @@ function TweetCard({
           </span>
         </div>
         <p className="whitespace-pre-wrap">{content}</p>
-        <HeartButton likedByMe={likedByMe} likeCount={likeCount} />
+        <HeartButton
+          onClick={handleToggleLike}
+          isLoading={toggleLike.isLoading}
+          likedByMe={likedByMe}
+          likeCount={likeCount}
+        />
       </div>
     </li>
   );
 }
 
 type HeartButtonProps = {
+  isLoading: boolean;
+  onClick: () => void;
   likedByMe: boolean;
   likeCount: number;
 };
 
-function HeartButton({ likedByMe, likeCount }: HeartButtonProps) {
+function HeartButton({
+  likedByMe,
+  likeCount,
+  isLoading,
+  onClick,
+}: HeartButtonProps) {
   const session = useSession();
   const HeartIcon = likedByMe ? VscHeartFilled : VscHeart;
   if (session.status !== "authenticated") {
@@ -110,6 +159,8 @@ function HeartButton({ likedByMe, likeCount }: HeartButtonProps) {
   }
   return (
     <button
+      disabled={isLoading}
+      onClick={onClick}
       className={`group -ml-2 flex items-center gap-1 self-start transition-colors duration-200  ${
         likedByMe
           ? "text-red-500"
