@@ -62,6 +62,7 @@ function FollowingTweets() {
     { getPreviousPageParam: (lastPage) => lastPage.nextCursor }
   );
   return (
+    // infiniteTweet List
     <InfiniteTweetList
       tweets={tweets.data?.pages.flatMap((page) => page.tweets)}
       isError={tweets.isError}
