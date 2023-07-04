@@ -1,7 +1,7 @@
 import { NextPage } from "next";
 import { useSession } from "next-auth/react";
 import React, { useState } from "react";
-import InfiniteTweetList from "~/components/InfiniteTweetList";
+import { InfiniteTweetList } from "~/components/InfiniteTweetList";
 import NewTweetForm from "~/components/NewTweetForm";
 import { api } from "~/utils/api";
 
@@ -22,8 +22,9 @@ const Home: NextPage = () => {
                 <button
                   key={tab}
                   className={` flex-grow p-2 hover:bg-gray-200 focus-visible:bg-gray-200 ${
-                    tab === selectedTab &&
-                    "border-b-4 border-b-blue-500 font-bold"
+                    tab === selectedTab
+                      ? "border-b-4 border-b-blue-500 font-bold"
+                      : ""
                   }`}
                   onClick={() => setSelectedTab(tab)}
                 >
@@ -58,7 +59,7 @@ function RecentTweets() {
 
 function FollowingTweets() {
   const tweets = api.tweet.infiniteFeed.useInfiniteQuery(
-    {onlyFollowing:true},
+    { onlyFollowing: true },
     { getPreviousPageParam: (lastPage) => lastPage.nextCursor }
   );
   return (

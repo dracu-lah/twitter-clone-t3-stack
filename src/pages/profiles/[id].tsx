@@ -13,9 +13,9 @@ import Link from "next/link";
 import IconHoverEffect from "~/components/IconHoverEffect";
 import { VscArrowLeft } from "react-icons/vsc";
 import ProfileImage from "~/components/ProfileImage";
-import InfiniteTweetList from "~/components/InfiniteTweetList";
 import Button from "~/components/Button";
 import { useSession } from "next-auth/react";
+import { InfiniteTweetList } from "~/components/InfiniteTweetList";
 const ProfilePage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
   id,
 }) => {
